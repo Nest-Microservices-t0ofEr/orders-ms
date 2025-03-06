@@ -21,6 +21,7 @@ async function bootstrap() {
   )
   app.useGlobalFilters(new RpcCustomExceptionFilter ())
   await app.listen();
+  console.log('OrdersMs - Testing trigger');
 
   logger.log(`Orders Microservices running on port ${envs.port}`);
 }
