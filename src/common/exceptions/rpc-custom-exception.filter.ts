@@ -1,36 +1,30 @@
-import { Catch, ArgumentsHost, ExceptionFilter, HttpStatus } from '@nestjs/common';
+import { ArgumentsHost, Catch, ExceptionFilter, Logger } from '@nestjs/common';
 import { RpcException } from '@nestjs/microservices';
 
-@Catch(RpcException)
+@Catch()
 export class RpcCustomExceptionFilter implements ExceptionFilter {
-    catch(exception: RpcException, host: ArgumentsHost) {
-        const ctx = host.switchToRpc();
-        const rpcError = exception.getError();
+    private readonly logger = new Logger(RpcCustomExceptionFilter.name);
 
-        if (!rpcError) {
-            return {
-                status: HttpStatus.INTERNAL_SERVER_ERROR,
-                message: exception,
+    catch(exception: any, host: ArgumentsHost) {
+        this.logger.error('Exception caught', exception);
+        let errorData = {};
+        // Si la excepción es del tipo RpcException, extraemos el error
+        if (exception instanceof RpcException) {
+            const errorResponse = exception.getError();
+            errorData = {
+                status: 'error',
+                error: exception
             };
+            return errorData;
         }
 
-        if (typeof rpcError === 'string' && rpcError.includes('Empty response')) {
-            return {
-                status: HttpStatus.INTERNAL_SERVER_ERROR,
-                message: rpcError.substring(0, rpcError.indexOf('(') - 1),
-            };
-        }
-
-        if (typeof rpcError === 'object' && 'status' in rpcError && 'message' in rpcError) {
-            return {
-                status: typeof rpcError.status !== 'number' ? HttpStatus.BAD_REQUEST : rpcError.status,
-                message: rpcError.message,
-            };
-        }
-
-        return {
-            status: HttpStatus.BAD_REQUEST,
-            message: typeof rpcError === 'string' ? rpcError : exception,
+        // Si es otro tipo de error, respondemos con un mensaje genérico
+        errorData= {
+            status: 'error',
+            message: exception || 'Internal server error',
+            error: 500,
         };
-    }
+        console.log(errorData);
+        return errorData;
+    }   
 }
