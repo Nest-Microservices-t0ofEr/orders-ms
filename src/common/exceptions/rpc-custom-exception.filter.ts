@@ -1,30 +1,16 @@
-import { ArgumentsHost, Catch, ExceptionFilter, Logger } from '@nestjs/common';
+import { ArgumentsHost, Catch, ExceptionFilter } from '@nestjs/common';
 import { RpcException } from '@nestjs/microservices';
+import { Response } from 'express';
 
-@Catch()
-export class RpcCustomExceptionFilter implements ExceptionFilter {
-    private readonly logger = new Logger(RpcCustomExceptionFilter.name);
-
-    catch(exception: any, host: ArgumentsHost) {
-        this.logger.error('Exception caught', exception);
-        let errorData = {};
-        // Si la excepción es del tipo RpcException, extraemos el error
-        if (exception instanceof RpcException) {
-            const errorResponse = exception.getError();
-            errorData = {
-                status: 'error',
-                error: exception
-            };
-            return errorData;
-        }
-
-        // Si es otro tipo de error, respondemos con un mensaje genérico
-        errorData= {
-            status: 'error',
-            message: exception || 'Internal server error',
-            error: 500,
-        };
-        console.log(errorData);
-        return errorData;
-    }   
+@Catch(RpcException)
+export class RpcExceptionFilter implements ExceptionFilter {
+    catch(exception: RpcException, host: ArgumentsHost) {
+        const error: any = exception.getError();
+        const ctx = host.switchToHttp();
+        const response = ctx.getResponse<Response>();
+        
+        response
+            .status(error.statusCode)
+            .json(error);
+    }
 }
