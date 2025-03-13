@@ -19,7 +19,7 @@ async function bootstrap() {
       forbidNonWhitelisted: true,
     })
   )
-  app.useGlobalFilters(new RpcCustomExceptionFilter ())
+  app.useGlobalFilters(new RpcCustomExceptionFilter())
   await app.listen();
   console.log('OrdersMs - Testing trigger');
 
